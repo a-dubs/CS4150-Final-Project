@@ -39,8 +39,6 @@ class Person(arcade.Sprite):
         self.hp = hp
 
     def update(self):
-        if self.hp <= 0:
-            self.kill()
         super().update()
 
     def take_damage(self,damage:int):
@@ -71,6 +69,8 @@ class ColdpointSeattle(arcade.Window):
         self.players_list = arcade.SpriteList()
         self.obstacles_list = arcade.SpriteList(use_spatial_hash=True)
         self.projectiles_list = arcade.SpriteList()
+        self.score = 0
+        self.time_elapsed = 0
         # self.all_sprites = arcade.SpriteList()
         
         self.setup()
@@ -90,43 +90,30 @@ class ColdpointSeattle(arcade.Window):
         # arcade.schedule(self.spawn_enemy, 1)
         arcade.schedule(self.make_enemies_shoot, 1)
 
-    def spawn_enemy(self, d_time: float=None):
-        # enemy = arcade.Sprite("resources/sprites/enemy.png",image_height=ENEMY_HEIGHT,image_width=ENEMY_WIDTH)
-        enemy = Person(hp=ENEMY_HEALTH_NORMAL,filename="resources/sprites/enemy2.png",scale=ENEMY_SCALE)
-        # enemy.center_x = CENTER_X + 0.75 * CENTER_X * (dir:=(-1)**randint(0,1)) + 0.01*randint(0,25) * CENTER_X * dir
-        # enemy.center_y = CENTER_Y + 0.75 * CENTER_Y * (dir:=(-1)**randint(0,1)) + 0.01*randint(0,25) * CENTER_Y * dir
-        if randint(0,1):
-            enemy.center_x = CENTER_X + CENTER_X * (dir:=(-1)**randint(0,1)) + 0.01*randint(0,25) * CENTER_X * dir
-            enemy.center_y = SCREEN_HEIGHT + 0.01*randint(0,25) * SCREEN_HEIGHT * (dir2:=(-1)**randint(0,1))
-            enemy.angle = 270 if dir == -1 else 90
-            enemy.change_x = 1 if dir == -1 else -1
-        else:
-            enemy.center_y = CENTER_Y + CENTER_Y * (dir:=(-1)**randint(0,1)) + 0.01*randint(0,25) * CENTER_Y * dir
-            enemy.center_x = SCREEN_WIDTH + 0.01*randint(0,25) * SCREEN_WIDTH * (dir2:=(-1)**randint(0,1))
-            enemy.angle = 0 if dir == -1 else 180
-            enemy.change_y = 1 if dir == -1 else -1
+    def spawn_enemy(self, d_time: float):
+        enemy_freq = 0.5
+        if random() < enemy_freq * d_time:
+            # enemy = arcade.Sprite("resources/sprites/enemy.png",image_height=ENEMY_HEIGHT,image_width=ENEMY_WIDTH)
+            enemy = Person(hp=ENEMY_HEALTH_NORMAL,filename="resources/sprites/enemy2.png",scale=ENEMY_SCALE)
+            # spawn on left and right of screen
+            if randint(0,1): 
+                enemy.center_x = CENTER_X + CENTER_X * (dir:=(-1)**randint(0,1)) + 0.01*randint(0,25) * CENTER_X * dir
+                enemy.center_y = SCREEN_HEIGHT * random()
+                enemy.angle = 270 if dir == -1 else 90
+                enemy.change_x = 1 if dir == -1 else -1
+            # spawn on top and bottom of screen
+            else:
+                enemy.center_y = CENTER_Y + CENTER_Y * (dir:=(-1)**randint(0,1)) + 0.01*randint(0,25) * CENTER_Y * dir
+                enemy.center_x = SCREEN_WIDTH * random()
+                enemy.angle = 0 if dir == -1 else 180
+                enemy.change_y = 1 if dir == -1 else -1
 
-        # enemy.forward(2.0)
-        # Add it to the enemies list
-        self.enemies_list.append(enemy)
-        # self.all_sprites.append(enemy)
+            # Add it to the enemies list
+            self.enemies_list.append(enemy)
 
-    def make_enemies_shoot(self, d_time: float):
+    def make_enemies_shoot(self, dt: float):
         for e in self.enemies_list:
             self.shoot_from(e)
-
-    def on_draw(self):
-        """Called whenever you need to draw your window
-        """
-        # Clear the screen and start drawing
-        arcade.start_render()
-
-        # draw rectangle 
-        # arcade.draw_rectangle_filled(self._mouse_x,self._mouse_y,20,100,colors.BLACK)
-        self.enemies_list.draw()
-        self.players_list.draw()
-        self.obstacles_list.draw()
-        self.projectiles_list.draw()
 
     def shoot_from(self, sprite : arcade.Sprite):
         bullet = SpriteCircle(FRIENDLY_BULLET_RADIUS if sprite in self.players_list else ENEMY_BULLET_RADIUS,
@@ -142,6 +129,7 @@ class ColdpointSeattle(arcade.Window):
         # bullet.forward(10)
         self.projectiles_list.append(bullet)
         # bullet.color
+
 
     def end_game(self):
         pass
@@ -161,7 +149,6 @@ class ColdpointSeattle(arcade.Window):
                 proj.kill()
             elif (obstacle:=proj.collides_with_list(self.obstacles_list)):
                 proj.kill()
-            
 
 
     def on_key_press(self, symbol: int, modifiers: int):
@@ -188,8 +175,8 @@ class ColdpointSeattle(arcade.Window):
         if symbol == arcade.key.SPACE:
             self.shoot_from(self.players_list[0])
 
-    
-    def on_update(self, delta_time: float):
+
+    def on_update(self, dt: float):
         """Update the positions and statuses of all game objects
         If paused, do nothing
 
@@ -197,14 +184,17 @@ class ColdpointSeattle(arcade.Window):
             delta_time {float} -- Time since the last update
 
         """
+
         if self.paused:
             return
+        
+        self.time_elapsed += dt
         
         self.players_list[0].face_point((self._mouse_x,self._mouse_y))
         self.player.change_x = 1.0 * cos(self.player.radians+0.5*pi)
         self.player.change_y = 1.0 * sin(self.player.radians+0.5*pi)
 
-        
+        self.spawn_enemy(dt)
 
         # Update everything
         self.players_list.update()
@@ -212,6 +202,11 @@ class ColdpointSeattle(arcade.Window):
         self.projectiles_list.update()
         self.obstacles_list.update()
         self.updateProjectiles()
+
+        for enemy in self.enemies_list:
+            if enemy.hp <= 0:
+                enemy.kill()
+                self.score += 1
 
         # Keep the player on screen
         if self.player.top > self.height:
@@ -223,9 +218,21 @@ class ColdpointSeattle(arcade.Window):
         if self.player.left < 0:
             self.player.left = 0    
 
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        return super().on_mouse_motion(x, y, dx, dy)
-    
+
+    def on_draw(self):
+        """Called whenever you need to draw your window
+        """
+        # Clear the screen and start drawing
+        arcade.start_render()
+
+        # draw rectangle 
+        # arcade.draw_rectangle_filled(self._mouse_x,self._mouse_y,20,100,colors.BLACK)
+        self.enemies_list.draw()
+        self.players_list.draw()
+        self.obstacles_list.draw()
+        self.projectiles_list.draw()
+        arcade.draw_rectangle_filled(center_x=CENTER_X,center_y=SCREEN_HEIGHT-30, width=200, height=60,color=colors.GRAY_ASPARAGUS)
+        arcade.draw_text(f"Score: {self.score}", start_x=CENTER_X-100, start_y=SCREEN_HEIGHT-30,font_size=20,align="center",color=colors.WHITE_SMOKE,width=200)
 
 
 # Main code entry point
