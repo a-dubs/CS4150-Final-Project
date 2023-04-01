@@ -25,6 +25,10 @@ PLAYER_HEALTH_NORMAL = 1000
 ENEMY_HEALTH_NORMAL = 200
 BULLET_DMG = 100
 
+ENEMY_SPEED = 5
+# ENEMY_ACCEL = 
+PLAYER_SPEED = 5
+
 BULLET_SPEED = 35.0
 FRIENDLY_BULLET_COLOR = colors.GOLDEN_POPPY
 FRIENDLY_BULLET_RADIUS = 5
@@ -120,10 +124,12 @@ class ColdpointSeattle(arcade.Window):
                               color=(FRIENDLY_BULLET_COLOR if sprite in self.players_list else ENEMY_BULLET_COLOR))
         # bullet.center_x = sprite.center_x + sprite.width * 0.65 * cos(sprite.radians+pi*0.44)
         # bullet.center_y = sprite.center_y + sprite.height * 0.65 * sin(sprite.radians+pi*0.44)
-        bullet.center_x = sprite.center_x + sprite.width * 0.5 * cos(sprite.radians+0.5*pi)
-        bullet.center_y = sprite.center_y + sprite.height * 0.5 * sin(sprite.radians+0.5*pi)
+        bullet.center_x = sprite.center_x + sprite.width * 0.7 * cos(sprite.radians+0.5*pi)
+        bullet.center_y = sprite.center_y + sprite.height * 0.7 * sin(sprite.radians+0.5*pi)
         # bullet.face_point((self._mouse_x,self._mouse_y))
-        bullet.radians = sprite.radians + 0.5*pi
+        spread = 20 # in degrees, cone of innaccuracy
+        bullet.radians = sprite.radians + 0.5*pi + (pi*spread*(random()-0.5)/180)
+
         bullet.change_x = BULLET_SPEED * cos(bullet.radians)
         bullet.change_y = BULLET_SPEED * sin(bullet.radians)
         # bullet.forward(10)
@@ -147,8 +153,11 @@ class ColdpointSeattle(arcade.Window):
                 if players:
                     [p.take_damage(BULLET_DMG) for p in players]  
                 proj.kill()
-            elif (obstacle:=proj.collides_with_list(self.obstacles_list)):
+            if (obstacle:=proj.collides_with_list(self.obstacles_list)):
                 proj.kill()
+            if not 0 < proj.center_x < SCREEN_WIDTH or not 0 < proj.center_y < SCREEN_HEIGHT:
+                proj.kill()
+
 
 
     def on_key_press(self, symbol: int, modifiers: int):
@@ -158,31 +167,47 @@ class ColdpointSeattle(arcade.Window):
 
         if symbol == arcade.key.ESCAPE:
             self.paused = not self.paused
-            print(self.paused)
+            # print(self.paused)
 
         if symbol == arcade.key.W or symbol == arcade.key.UP:
-            self.player.change_y = 5
+            self.player.change_y = PLAYER_SPEED
 
         if symbol == arcade.key.S or symbol == arcade.key.DOWN:
-            self.player.change_y = -5
+            self.player.change_y = -PLAYER_SPEED
 
         if symbol == arcade.key.A or symbol == arcade.key.LEFT:
-            self.player.change_x = -5
+            self.player.change_x = -PLAYER_SPEED
 
         if symbol == arcade.key.D or symbol == arcade.key.RIGHT:
-            self.player.change_x = 5
+            self.player.change_x = PLAYER_SPEED
 
         if symbol == arcade.key.SPACE:
             self.shoot_from(self.players_list[0])
 
+    def on_key_release(self, symbol: int, modifiers: int):
+        if symbol == arcade.key.W or symbol == arcade.key.UP:
+            if self.player.change_y == PLAYER_SPEED:
+                self.player.change_y = 0
+
+        if symbol == arcade.key.S or symbol == arcade.key.DOWN:
+            if self.player.change_y == -PLAYER_SPEED:
+                self.player.change_y = 0
+
+        if symbol == arcade.key.A or symbol == arcade.key.LEFT:
+            if self.player.change_x == -PLAYER_SPEED:
+                self.player.change_x = 0
+
+        if symbol == arcade.key.D or symbol == arcade.key.RIGHT:
+            if self.player.change_x == PLAYER_SPEED:
+                self.player.change_x = 0
+
 
     def on_update(self, dt: float):
-        """Update the positions and statuses of all game objects
-        If paused, do nothing
-
+        """
+        Update the positions and statuses of all game objects
+        
         Arguments:
             delta_time {float} -- Time since the last update
-
         """
 
         if self.paused:
@@ -191,11 +216,13 @@ class ColdpointSeattle(arcade.Window):
         self.time_elapsed += dt
         
         self.players_list[0].face_point((self._mouse_x,self._mouse_y))
-        self.player.change_x = 1.0 * cos(self.player.radians+0.5*pi)
-        self.player.change_y = 1.0 * sin(self.player.radians+0.5*pi)
+        # self.player.change_x = 1.0 * cos(self.player.radians+0.5*pi)
+        # self.player.change_y = 1.0 * sin(self.player.radians+0.5*pi)
 
         self.spawn_enemy(dt)
-
+        # self.players_list[0].change_x = 0
+        # self.players_list[0].change_y = 0
+        
         # Update everything
         self.players_list.update()
         self.enemies_list.update()
