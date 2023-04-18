@@ -1,0 +1,36 @@
+import math
+from math import sqrt, cos, sin, pi
+from random import random
+from typing import Optional
+import arcade
+from arcade import Sprite, SpriteList, SpriteCircle, Texture
+import arcade.color as colors
+
+SCREEN_WIDTH = 1200
+SCREEN_HEIGHT = 900
+CENTER_X = SCREEN_WIDTH / 2
+CENTER_Y = SCREEN_HEIGHT / 2
+SCALING = 2
+SCREEN_TITLE = "Coldpoint Seattle"
+
+ENEMY_SCALE = 0.2 / SCALING
+PLAYER_SCALE = 0.2 / SCALING
+# ENEMY_HEIGHT = 50
+# ENEMY_WIDTH = 50
+# PLAYER_HEIGHT = 50
+# PLAYER_WIDTH = 50
+PLAYER_HEALTH_NORMAL = 1000
+ENEMY_HEALTH_NORMAL = 200
+BULLET_DMG = 100
+
+ENEMY_SPEED = 5 / SCALING
+# ENEMY_ACCEL =
+PLAYER_SPEED = 5 / SCALING
+
+BULLET_SPEED = 35 / SCALING
+FRIENDLY_BULLET_RADIUS = int(5 / SCALING)
+ENEMY_BULLET_RADIUS = int(4 / SCALING)
+ENEMY_BULLET_COLOR = colors.RED_PURPLE
+FRIENDLY_BULLET_COLOR = colors.GOLDEN_BROWN
+OBSTACLE_COLORS = [colors.BLACK_BEAN,
+                   colors.BLACK_LEATHER_JACKET, colors.SHIMMERING_BLUSH]
