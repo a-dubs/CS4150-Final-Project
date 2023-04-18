@@ -42,7 +42,7 @@ from constants import *
 #         # if self.hp <= 0:
 #         #     self.kill()
 
-#     # returns true if already at 
+#     # returns true if already at
 #     def move_to_pos(self, target_pos:tuple[float,float]) -> bool:
 #         if (dist_btwn:=dist(self.position,target_pos)) == 0:
 #             self.change_x = 0
@@ -53,7 +53,7 @@ from constants import *
 #         self.change_x = target_velocity_vect[0]
 #         self.change_y = target_velocity_vect[1]
 #         return False
-        
+
 # class PersonList(SpriteList):
 #     def __init__(self, use_spatial_hash=None, spatial_hash_cell_size=128, is_static=False, atlas: "TextureAtlas" = None, capacity: int = 100, lazy: bool = False, visible: bool = True):
 #         super().__init__(use_spatial_hash, spatial_hash_cell_size, is_static, atlas, capacity, lazy, visible)
@@ -84,7 +84,7 @@ class ColdpointSeattle(arcade.Window):
         self.projectiles_list = arcade.SpriteList()
         self.score = 0
         self.time_elapsed = 0
-        self.EnemyAIs : list[SpriteAI] = []
+        self.EnemyAIs: list[SpriteAI] = []
         # self.all_sprites = arcade.SpriteList()
 
         self.setup()
@@ -95,7 +95,8 @@ class ColdpointSeattle(arcade.Window):
         arcade.set_background_color(arcade.color.WHITE_SMOKE)
 
         # set up player
-        self.player = SpriteAI(
+        self.player = Person(
+            is_player=True,
             hp=PLAYER_HEALTH_NORMAL, speed=PLAYER_SPEED, filename="resources/sprites/player.png", scale=PLAYER_SCALE)
         self.player.center_x = CENTER_X
         self.player.center_y = CENTER_Y
@@ -103,9 +104,6 @@ class ColdpointSeattle(arcade.Window):
 
         self.generate_obstacles()
 
-        # Spawn a new enemy every  seconds
-        # arcade.schedule(self.spawn_enemy, 1)
-        arcade.schedule(self.make_enemies_shoot, 1)
 
     def generate_obstacles(self):
         # for i in range(randint(10, 20)):
@@ -136,8 +134,15 @@ class ColdpointSeattle(arcade.Window):
             enemy = SpriteAI(
                 hp=ENEMY_HEALTH_NORMAL,
                 speed=ENEMY_SPEED,
-                filename="resources/sprites/enemy2.png", 
+                filename="resources/sprites/enemy2.png",
                 scale=ENEMY_SCALE)
+            enemy.update_game_state(*self.getGameState())
+            considerations = [
+                AboveThreshold(1, 0, enemy.line_of_sight),
+                # AboveThreshold(1, 0, enemy.line_of_sight),
+            ]
+            shoot_on_sight = Option(5,considerations=considerations,actions=["shoot"])
+            enemy.add_option(shoot_on_sight)
             # spawn on left and right of screen
             if randint(0, 1):
                 enemy.center_x = CENTER_X + CENTER_X * \
@@ -159,9 +164,6 @@ class ColdpointSeattle(arcade.Window):
             self.enemies_list.append(enemy)
             self.EnemyAIs.append(enemy)
 
-    def make_enemies_shoot(self, dt: float):
-        for e in self.enemies_list:
-            self.shoot_from(e)
 
     def shoot_from(self, sprite: Sprite):
         bullet = SpriteCircle(FRIENDLY_BULLET_RADIUS if sprite == self.player else ENEMY_BULLET_RADIUS,
@@ -200,6 +202,7 @@ class ColdpointSeattle(arcade.Window):
             if proj.width/2 == ENEMY_BULLET_RADIUS and (player := proj.collides_with_sprite(self.player)):
                 if player:
                     self.player.take_damage(BULLET_DMG)
+                    print("OUCH")
                 proj.kill()
             if (obstacle := proj.collides_with_list(self.obstacles_list)):
                 proj.kill()
@@ -228,7 +231,10 @@ class ColdpointSeattle(arcade.Window):
             self.player.change_x = PLAYER_SPEED
 
         if symbol == arcade.key.SPACE:
-            self.shoot_from(self.player)
+            self.player.shoot()
+
+        if symbol == arcade.key.R:
+            self.player.reload()
 
         if symbol == arcade.key.ENTER:
             self.spawn_enemy(0, force_spawn=True)
@@ -272,6 +278,8 @@ class ColdpointSeattle(arcade.Window):
         # self.players_list[0].change_y = 0
 
         # self.players_list.update()
+        self.player.update_game_state(*self.getGameState())
+        self.player.tick(dt)
         self.player.update()
         self.projectiles_list.update()
         self.obstacles_list.update()
@@ -313,23 +321,41 @@ class ColdpointSeattle(arcade.Window):
         self.projectiles_list.draw()
 
         # def draw_sightlines(self):
-        for enemy in self.enemies_list:
-            if (has_los := has_line_of_sight(viewer=self.player, target=enemy, obstacles=self.obstacles_list)):
+        for enemyAI in self.EnemyAIs:
+            if (has_los := has_line_of_sight(viewer=self.player, target=enemyAI, obstacles=self.obstacles_list)):
                 arcade.draw_line(
-                    enemy.center_x,
-                    enemy.center_y,
+                    enemyAI.center_x,
+                    enemyAI.center_y,
                     self.player.center_x,
                     self.player.center_y,
-                    color=colors.RED_DEVIL if has_los else colors.CADMIUM_GREEN,
+                    color=colors.RED_DEVIL if enemyAI.player_is_facing() else colors.CADMIUM_GREEN,
                     line_width=1
                 )
-                
 
         arcade.draw_rectangle_filled(
             center_x=CENTER_X, center_y=SCREEN_HEIGHT-30, width=200, height=60, color=colors.GRAY_ASPARAGUS)
         arcade.draw_text(f"Score: {self.score}", start_x=CENTER_X-100, start_y=SCREEN_HEIGHT -
                          30, font_size=20, align="center", color=colors.WHITE_SMOKE, width=200)
-
+        arcade.draw_text(
+            f"AMMO: " + "▕" +"▓"*self.player.ammo_left + "░"*(self.player.magazine_size-self.player.ammo_left) + '▏' 
+                + f" {self.player.ammo_left}/{self.player.magazine_size}",
+            start_x=SCREEN_WIDTH-400, start_y=30, 
+            font_size=16, align="left", color=colors.VEGAS_GOLD, width=200
+        )  
+        if self.player.reloading:
+            arcade.draw_text(
+                "RELOADING...",
+                start_x=SCREEN_WIDTH-300, start_y=60, 
+                font_size=16, align="left", color=colors.VEGAS_GOLD, width=200
+            )    
+        arcade.draw_text(
+            f"HEALTH: " + "▕" +"▓"*math.ceil((self.player.hp/self.player.max_hp)*20) 
+                + "░"*math.ceil((1.0-(self.player.hp/self.player.max_hp))*20) + '▏' 
+                + f" {self.player.hp}/{self.player.max_hp}",
+            start_x=50, start_y=30, 
+            font_size=16, align="left", 
+            color=(colors.GREEN if (self.player.hp/self.player.max_hp > 0.5) else colors.FALU_RED), width=400
+        )   
 
 
 # Main code entry point

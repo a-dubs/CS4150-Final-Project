@@ -109,7 +109,7 @@ class BelowThreshold(Consideration):
         self.below = self.value() < self.threshold
     
     def calculate(self) -> float:
-        return self.weight * (self.value() < self.threshold)
+        return self.weight * self.below
     
     def update(self, dt: float) -> None:
         self.below = self.value() < self.threshold
@@ -117,12 +117,20 @@ class BelowThreshold(Consideration):
     def reset(self) -> None:
         pass
 
-class Action:
-    # def __init__(self, target: arcade.Sprite, action: str, *args:Any) -> None:
-    def __init__(self, action_name:str, *args:Any) -> None:
-        # self.target = target
-        self.action_name = action_name
-        self.args = args
+# class Action:
+#     # def __init__(self, target: arcade.Sprite, action: str, *args:Any) -> None:
+#     def __init__(self, action_name:str, *args:Any) -> None:
+#         # self.target = target
+#         self.action_name = action_name
+#         self.args = args
+
+
+
+def product(considerations: list[Consideration]) -> float:
+    weight = considerations[0].calculate()
+    for consideration in considerations[1:]:
+        weight *= consideration.calculate()
+    return weight
 
 def aggregate(considerations: list[Consideration]) -> float:
     weight = 0.0
@@ -131,21 +139,33 @@ def aggregate(considerations: list[Consideration]) -> float:
     return weight
 
 class Option:
-    def __init__(self, priority:int, considerations:list[Consideration], action: Action) -> None:
+    def __init__(self, priority:int, considerations:list[Consideration], actions: list[str], combination = "aggregate", description="") -> None:
         self.priority = priority
         # self.name = name
         self.considerations = considerations
-        self.action = action
-    
+        self.actions = actions
+        self.combination = combination
+        self.description = description
+
     def calculate(self) -> float:
-        return aggregate(self.considerations)
+        if self.combination == "aggregate":
+            return aggregate(self.considerations)
+        else:
+            return product(self.considerations)
     
     def add_consideration(self, consideration: Consideration) -> None:
         self.considerations.append(consideration)
 
+    def __str__(self) -> str:
+        return f"Option: {self.description +' - ' if self.description else  ''}P={self.priority} | W={self.calculate()}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
 def choose(options: list[Option]) -> Option:
     # filter out all options with weight of 0
     options = [opt for opt in options if opt.calculate() > 0]
+    print(options)
     # if no options left, return None
     if len(options) == 0:
         return None
