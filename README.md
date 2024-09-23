@@ -1,14 +1,39 @@
 # CS 4150
 
-This is the boilerplate for all my personal projects on GitHub. (This is the brief description for this repository)
+This Python-based top-down shooter game uses **modular AI** for enemy behavior, allowing for configurable options and considerations.
 
-<br>
+<b>
 
 ## Summary
- - This is the template boilerplate repository for all personal projects that I have on my GitHub. 
- - This template will expedite the creation and maintenance of all my various projects' repositories.
- - And more importantly, the standardized format will allow for auto parsing of the repository by a python script to automatically update my personal portfolio website.  
+- Modular AI Configuration Options
+  - **Options**: Define specific enemy actions.
+  - **Considerations**: Evaluate game conditions (e.g., ammo, line of sight).
+  - **Actions**: Triggered when considerations are met.
 
+- Current AI Configuration:
+  - **Shoot on Sight**
+    - Conditions: Line of sight + ready to shoot.
+    - Action: Enemy shoots at player.
+    
+  - **Reload on Empty**
+    - Conditions: No ammo + not reloading.
+    - Action: Enemy reloads.
+  
+  - **Peek After Duration**
+    - Conditions: Delay, player nearby, can shoot.
+    - Actions: Peek and shoot.
+  
+  - **Take Cover if Spotted**
+    - Conditions: Player watching for >2 seconds.
+    - Action: Enemy takes cover.
+  
+  - **Take Cover While Reloading**
+    - Conditions: Enemy is reloading.
+    - Action: Enemy takes cover.
+  
+  - **Change Cover**
+    - Conditions: In cover for too long, arrived at cover.
+    - Action: Enemy changes cover.
 <br>
 
 ## Image Gallery
@@ -21,7 +46,7 @@ This is the boilerplate for all my personal projects on GitHub. (This is the bri
 
 ## Project Metadata  
 
-**Project Status** : (Active, Inactive, Archived)  
-**Project Progress** : (Concept, In Progress, Functional, Complete)  
-**Project dates** : Jan '00 - Present  
+**Project Status** : Archived
+**Project Progress** : Functional
+**Project dates** : Feb '23 - Apr '23  
 
