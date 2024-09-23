@@ -2,7 +2,7 @@
 
 This Python-based top-down shooter game uses **modular AI** for enemy behavior, allowing for configurable options and considerations.
 
-<b>
+<br>
 
 ## Summary
 - Modular AI Configuration Options
