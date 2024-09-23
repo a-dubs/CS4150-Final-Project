@@ -1,4 +1,4 @@
-# CS 4150
+# Modular AI Project
 
 This Python-based top-down shooter game uses **modular AI** for enemy behavior, allowing for configurable options and considerations.
 
