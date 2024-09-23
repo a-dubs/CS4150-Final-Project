@@ -1,6 +1,6 @@
 # Modular AI Project
 
-This Python-based top-down shooter game uses **modular AI** for enemy behavior, allowing for configurable options and considerations.
+Python top-down shooter game from scratch to demonstrate **modular AI** for enemy behavior, allowing for configurable options and considerations.
 
 <br>
 
