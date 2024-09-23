@@ -46,7 +46,7 @@ This Python-based top-down shooter game uses **modular AI** for enemy behavior, 
 
 ## Project Metadata  
 
-**Project Status** : Archived
-**Project Progress** : Functional
+**Project Status** : Archived  
+**Project Progress** : Functional  
 **Project dates** : Feb '23 - Apr '23  
 
