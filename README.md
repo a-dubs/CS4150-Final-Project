@@ -21,7 +21,7 @@ Python top-down shooter game made from scratch to demonstrate **modular AI** for
   
   - **Peek After Duration**
     - Conditions: Delay, player nearby, can shoot.
-    - Actions: Peek and shoot.
+    - Actions: Enemy peek and shoot.
   
   - **Take Cover if Spotted**
     - Conditions: Player watching for >2 seconds.
